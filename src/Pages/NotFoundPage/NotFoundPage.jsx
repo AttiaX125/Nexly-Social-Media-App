@@ -1,9 +1,9 @@
 import cavman1 from "../../assets/cavman1.jpeg"
-import cavman2 from "../../assets/cavman2.jpeg"
-import cavman3 from "../../assets/cavman-3.jpeg"
-import cavman4 from "../../assets/cavman-4.jpeg"
-import cavman5 from "../../assets/cavman-5.jpeg"
-import cavman6 from "../../assets/cavman-6.jpeg"
+import cavman2 from "../../assets/Cavman2.jpeg"
+import cavman3 from "../../assets/Cavman-3.jpeg"
+import cavman4 from "../../assets/Cavman-4.jpeg"
+import cavman5 from "../../assets/Cavman-5.jpeg"
+import cavman6 from "../../assets/Cavman-6.jpeg"
 import { useEffect, useState } from "react"
 export default function NotFoundPage() {
   const frames = [cavman1, cavman2, cavman3, cavman4, cavman5,cavman6];
@@ -13,7 +13,7 @@ export default function NotFoundPage() {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentFrame((prev) => (prev + 1) % frames.length);
-    }, 1000); // speed (200ms per frame)
+    }, 1000); 
 
     return () => clearInterval(interval);
   });
