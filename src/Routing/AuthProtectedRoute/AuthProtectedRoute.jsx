@@ -5,7 +5,7 @@ import { AuthUserContext } from "../../Contexts/AutUserContext/AuthUserProvider"
 export default function AuthProtectedRoute({children}) {
     const {token} = useContext(AuthUserContext)
     if (token){
-        return <Navigate to= "/"/>
+        return <Navigate to="/login" replace />;
     }
   return (
     <>

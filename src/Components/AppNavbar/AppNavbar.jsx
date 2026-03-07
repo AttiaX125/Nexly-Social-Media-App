@@ -14,9 +14,7 @@ import toast from "react-hot-toast";
 import axios from "axios";
 export default function AppNavbar() {
   const uploadImageRef = useRef();
-  const BookmarksRouter = useNavigate()
-  const myProfileRouter = useNavigate()
-  const logoutRouter = useNavigate()
+  const navigate = useNavigate();
  const {token, setToken, setUserData, userData, getUserData} = useContext( AuthUserContext )
    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -25,7 +23,7 @@ export default function AppNavbar() {
     localStorage.clear();
     setToken(null);
     setUserData(null);
-    logoutRouter('/login');
+    navigate('/login');
    }
    async function handleImageProfile(){
     const imageFormData = new FormData();
@@ -41,9 +39,11 @@ export default function AppNavbar() {
      loading: 'Uploading ......',
      success: function (){
      getUserData()
-      return <p>Holaaaaaaaa ------</p>
+      return <><p className="text-green-600">Profile image updated!</p></>
      },
-     error: <b>cry..........</b>,
+     error: function(){
+      return <><p className="text-red-600">Something went Wrong!.</p></>
+     },
    }
  );
    }
@@ -160,20 +160,26 @@ useEffect(() => {
                 {userData.email}
               </p>
             </DropdownItem>
-
             <DropdownItem
               key="my_Profile"
-              onClick={() => myProfileRouter("/myProfile")}
+              onClick={() => navigate("/")}
+            >
+              Posts
+            </DropdownItem>
+            <DropdownItem
+              key="my_Profile"
+              onClick={() => navigate("/myprofile")}
             >
               My Profile
             </DropdownItem>
 
             <DropdownItem
               key="Bookmarks"
-              onClick={() => BookmarksRouter("mybookmarks")}
+              onClick={() => navigate("mybookmarks")}
             >
               My Bookmarks
             </DropdownItem>
+
 
             <DropdownItem
               key="photo"

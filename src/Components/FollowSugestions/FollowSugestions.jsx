@@ -97,7 +97,7 @@ export default function FollowSugestions() {
             <button
               onClick={() => followUser(user._id)}
               disabled={isPending}
-              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50
+              className="bg-linear-to-br from-[#6366F1] to-[#8B5CF6] cursor-pointer disabled:opacity-50
                          text-white text-xs px-4 py-1.5 rounded-full transition"
             >
               Follow

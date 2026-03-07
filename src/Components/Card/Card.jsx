@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import { AuthUserContext } from "../../Contexts/AutUserContext/AuthUserProvider";
 import CreateComment from "../CreateComment/CreateComment";
-import { FaEllipsisV, FaRegBookmark } from "react-icons/fa";
+import { FaComment, FaEllipsisV, FaRegBookmark } from "react-icons/fa";
 import { useNavigate } from "react-router";
+import axios from "axios";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { IoIosHeart, IoIosShareAlt } from "react-icons/io";
 export default function Card({
   avatar,
   username,
@@ -15,7 +17,6 @@ export default function Card({
   topComment,
   onLike,
   onComment,
-  onShare,
   comment,
   commentsCount,
   postId,
@@ -25,8 +26,12 @@ export default function Card({
   isOwnPost,
   onDelete,
   onUpdate,
+  isShare,
+  sharedPost
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareText, setShareText] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [editText, setEditText] = useState(content);
@@ -34,6 +39,7 @@ export default function Card({
   const [isOverflowing, setIsOverflowing] = useState(false);
   const textRef = useRef(null);
   const postDetailsRoute = useNavigate();
+  const queryClient = useQueryClient();
 
   // Detect overflow
   useEffect(() => {
@@ -43,8 +49,63 @@ export default function Card({
       );
     }
   }, [content]);
+
+  /*=========================== Share Post====================== */
+const shareMutation = useMutation({
+  mutationFn: ({ postId, body }) =>
+    axios.post(
+      `${import.meta.env.VITE_BASE_URL}/posts/${postId}/share`,
+      { body },
+      {
+        headers: {
+          token: localStorage.getItem("token"),
+        },
+      }
+    ),
+
+  // 🔥 OPTIMISTIC UPDATE
+  onMutate: async ({ postId }) => {
+    await queryClient.cancelQueries({ queryKey: ["allPosts"] });
+
+    const previousPosts = queryClient.getQueryData(["allPosts"]);
+
+    queryClient.setQueryData(["allPosts"], (old = []) =>
+      old.map((post) => {
+        if (post._id === postId) {
+          return {
+            ...post,
+            sharesCount: (post.sharesCount || 0) + 1,
+          };
+        }
+        return post;
+      })
+    );
+
+    return { previousPosts };
+  },
+
+  // 🔥 SUCCESS → add new shared post
+  onSuccess: (res) => {
+    const newSharedPost = res.data.data.post;
+
+    queryClient.setQueryData(["allPosts"], (old = []) => [
+      newSharedPost,
+      ...old,
+    ]);
+  },
+
+  // 🔥 ERROR → rollback
+  onError: (_err, _vars, context) => {
+    queryClient.setQueryData(["allPosts"], context.previousPosts);
+  },
+
+  // 🔥 FINAL SYNC
+  onSettled: () => {
+    queryClient.invalidateQueries({ queryKey: ["allPosts"] });
+  },
+});
   return (
-    <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 shadow-xl mb-6 relative">
+    <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-2xl p-4 sm:p-6 shadow-xl mb-6 relative w-full">
       {/* 3 DOT MENU */}
       {isOwnPost && (
         <div className="absolute top-1 right-13">
@@ -105,7 +166,44 @@ export default function Card({
         </div>
         <span className="text-white/40 text-sm capitalize">{privacy}</span>
       </div>
+      {/* If it's a shared post */}
+      {isShare && sharedPost && (
+        <div className="mt-4 border border-white/20 rounded-xl p-4 bg-white/5 backdrop-blur-xl">
+          {/* Header of original post */}
+          <div className="flex items-center gap-3">
+            <img
+              src={sharedPost.user.photo}
+              alt={sharedPost.user.name}
+              className="w-10 h-10 rounded-full object-cover border border-white/20"
+            />
+            <div>
+              <h5 className="text-white font-semibold text-sm">
+                {sharedPost.user.name} (@{sharedPost.user.username})
+              </h5>
+              <span className="text-white/40 text-xs">
+                {new Date(sharedPost.createdAt).toLocaleString()}
+              </span>
+            </div>
+          </div>
 
+          {/* Body */}
+          <p className="text-white/85 mt-2 overflow-y-auto scrollbar-hide">{sharedPost.body}</p>
+
+          {/* Image */}
+          {sharedPost.image && (
+            <img
+              src={sharedPost.image}
+              alt="shared"
+              className="mt-2  rounded-xl w-full max-h-100 object-cover"
+            />
+          )}
+        </div>
+      )}
+      {isShare && (
+        <span className="text-white/40 text-sm">
+          Shared by {username} · {new Date(time).toLocaleString()}
+        </span>
+      )}
       {/* Content */}
       <div className="relative mt-4">
         <p
@@ -146,45 +244,80 @@ export default function Card({
         <img
           src={image}
           alt="post"
-          className="mt-4 rounded-xl w-full object-cover"
+          className="mt-4 rounded-xl w-full  object-cover"
         />
       )}
 
       {/* Counts */}
-      <div className="flex gap-6 mt-4 text-white/60 text-sm">
-        <span>{likesCount} Likes</span>
+      <div className="flex gap-6 mt-4 text-white/60 text-sm ">
+        <span className="flex items-center justify-center gap-2">{likesCount} <IoIosHeart size={15} /></span> 
         <span
           onClick={function () {
             postDetailsRoute(`/postDetails/${postId}`);
           }}
-          className="cursor-pointer"
+          className="cursor-pointer flex items-center gap-2"
         >
-          {commentsCount} comments
+          {commentsCount} <FaComment size={14} />
         </span>
-        <span>{sharesCount} Shares</span>
+        <span className="flex items-center gap-2">{sharesCount}  <IoIosShareAlt size={15} /></span>
       </div>
 
       {/* Actions */}
-      <div className="flex gap-8 mt-5 text-white/60">
+      <div className="flex justify-between sm:justify-start sm:gap-8 mt-5 text-white/60">
         <button
           onClick={onLike}
-          className={`transition cursor-pointer ${isLiked ? "text-blue-500 font-semibold" : "hover:text-purple-400 text-white/60"}`}
+          className={`transition cursor-pointer ${isLiked ? "text-rose-500 font-semibold" : "hover:text-purple-500 text-white/60"}`}
         >
-          Like
+          <IoIosHeart size={23} />
         </button>
         <button
           onClick={onComment}
           className="hover:text-purple-400 transition cursor-pointer"
         >
-          Comment
+          <FaComment size={20} />
         </button>
         <button
-          onClick={onShare}
+          onClick={() => setShowShareModal(true)}
           className="hover:text-purple-400 transition cursor-pointer"
         >
-          Share
+          <IoIosShareAlt size={22} />
         </button>
       </div>
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-6 rounded-2xl w-96">
+            <h3 className="text-white mb-3 font-semibold">Share Post</h3>
+            <textarea
+              value={shareText}
+              onChange={(e) => setShareText(e.target.value)}
+              placeholder="Add a comment..."
+              className="w-full p-2 rounded bg-white/10 text-white"
+            />
+            <div className="flex justify-end gap-3 mt-4">
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="text-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  shareMutation.mutate({
+                    postId,
+                    body: shareText || `Sharing this post`,
+                  });
+
+                  setShowShareModal(false);
+                  setShareText("");
+                }}
+                className="bg-blue-600 px-4 py-1 rounded text-white"
+              >
+                Share
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Top Comment */}
       {topComment && (
         <div className="mt-5 bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl p-4 transition hover:bg-white/15">
@@ -197,20 +330,20 @@ export default function Card({
             />
 
             {/* Content */}
-            <div className="flex-1">
+            <div className="flex-1 overflow-y-hidden scrollbar-hide">
               {/* Name + Date */}
               <div className="flex justify-between items-center">
                 <h5 className="text-white font-semibold text-sm">
                   {topComment.commentCreator?.name}
                 </h5>
 
-                <span className="text-white/40 text-xs">
+                <span className="text-white/40 text-xs ">
                   {new Date(topComment.createdAt).toLocaleString()}
                 </span>
               </div>
 
               {/* Comment Text */}
-              <p className="text-white/75 text-sm mt-1 leading-relaxed">
+              <p className="text-white/75 text-sm mt-1 leading-relaxed ">
                 {topComment.content}
               </p>
             </div>
@@ -221,7 +354,7 @@ export default function Card({
       {/* CONFIRM DELETE */}
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl">
+          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 shadow-xl ">
             <p>Are you sure?</p>
             <div className="flex gap-4 mt-4">
               <button
@@ -229,13 +362,13 @@ export default function Card({
                   onDelete(postId);
                   setConfirmDelete(false);
                 }}
-                className="bg-red-500 text-white px-4 py-1 rounded"
+                className="bg-red-500 text-white px-4 py-1 rounded cursor-pointer"
               >
                 Delete
               </button>
               <button
                 onClick={() => setConfirmDelete(false)}
-                className="bg-gray-300 px-4 py-1 rounded"
+                className="bg-gray-300 text-gray-900 px-4 py-1 rounded cursor-pointer"
               >
                 Cancel
               </button>
@@ -247,11 +380,11 @@ export default function Card({
       {/* EDIT MODAL */}
       {editModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl w-96">
+          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 shadow-xl w-96">
             <textarea
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
-              className="w-full border p-2"
+              className="w-full  p-2 text-gray-200"
             />
 
             <div className="flex gap-4 mt-4">
@@ -260,14 +393,14 @@ export default function Card({
                   onUpdate(postId, editText);
                   setEditModal(false);
                 }}
-                className="bg-blue-500 text-white px-4 py-1 rounded"
+                className="bg-linear-to-br from-[#6366F1] to-[#8B5CF6] text-white px-4 py-1 rounded cursor-pointer"
               >
                 Save
               </button>
 
               <button
                 onClick={() => setEditModal(false)}
-                className="bg-gray-300 px-4 py-1 rounded"
+                className="bg-gray-300 text-gray-900 px-4 py-1 rounded cursor-pointer"
               >
                 Cancel
               </button>
@@ -276,7 +409,7 @@ export default function Card({
         </div>
       )}
 
-      {comment && <CreateComment postId={postId} />}
+      {comment && <CreateComment postId={postId} closeComment={onComment}/>}
     </div>
   );
 }

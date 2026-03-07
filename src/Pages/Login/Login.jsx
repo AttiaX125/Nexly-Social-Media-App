@@ -1,5 +1,4 @@
 import { Button, Form, Input } from "@heroui/react";
-
 import  { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router";
@@ -19,7 +18,7 @@ const validationSchema = zod.object({
 export default function Login() {
   const homeNavigate = useNavigate()
   /*============= Hooks Handler===================== */
-  const {setToken, setUserData , userData} = useContext(AuthUserContext)
+  const {setToken, setUserData } = useContext(AuthUserContext)
   const [loading, setLoading] = useState(false)
   const {handleSubmit, register, formState: {errors}} = useForm({
     defaultValues : {
@@ -43,7 +42,6 @@ export default function Login() {
       localStorage.setItem("userData", JSON.stringify(msg.data.data.user));
       setToken(msg.data.data.token);
       localStorage.setItem('token',msg.data.data.token);
-      console.log(userData)
         setLoading(false);
      homeNavigate("/posts");
      <p className="text-emerald-700">{msg.data.message}</p>},

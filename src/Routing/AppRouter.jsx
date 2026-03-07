@@ -11,14 +11,18 @@ import MyBookmarks from "../Pages/MyBookmarks/MyBookmarks";
 import SinglePost from "../Pages/SinglePost/SinglePost";
 
 export const Router =createBrowserRouter([
-    {path: '', element: <Layout/>, children: [
-        {path: '' , element: <ProtectedRoute><Posts/></ProtectedRoute>},
-        {path: 'login' , element: <AuthProtectedRoute><Login/></AuthProtectedRoute>},
-        {path: 'posts' , element: <ProtectedRoute><Posts/></ProtectedRoute>},
-        {path: 'mybookmarks' , element: <ProtectedRoute><MyBookmarks/></ProtectedRoute>},
-        {path: 'postDetails/:postId' , element: <ProtectedRoute><SinglePost/></ProtectedRoute>},
-        {path: 'myProfile' , element: <ProtectedRoute><MyProfile/></ProtectedRoute>},
-        {path: 'signup' , element: <AuthProtectedRoute><SignUp/></AuthProtectedRoute>},
-        {path: '*' , element: <NotFoundPage/>},
-    ]}
+{
+  path: "/",
+  element: <Layout />,
+  children: [
+    { index: true, element: <ProtectedRoute><Posts/></ProtectedRoute> },
+    { path: "login", element: <AuthProtectedRoute><Login/></AuthProtectedRoute> },
+    { path: "signup", element: <AuthProtectedRoute><SignUp/></AuthProtectedRoute> },
+    { path: "posts", element: <ProtectedRoute><Posts/></ProtectedRoute> },
+    { path: "mybookmarks", element: <ProtectedRoute><MyBookmarks/></ProtectedRoute> },
+    { path: "postDetails/:postId", element: <ProtectedRoute><SinglePost/></ProtectedRoute> },
+    { path: "myProfile", element: <ProtectedRoute><MyProfile/></ProtectedRoute> },
+    { path: "*", element: <NotFoundPage/> }
+  ]
+}
 ])

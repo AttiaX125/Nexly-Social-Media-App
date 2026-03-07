@@ -40,7 +40,7 @@ export default function CreatePostCard() {
 
     // 🔥 OPTIMISTIC UPDATE
     onMutate: async (formData) => {
-      await queryClient.cancelQueries(["allPosts"]);
+      await queryClient.cancelQueries({ queryKey: ["allPosts"] });
 
       const previousPosts = queryClient.getQueryData(["allPosts"]);
 
@@ -62,9 +62,9 @@ export default function CreatePostCard() {
         bookmarked: false,
       };
 
-      queryClient.setQueryData(["allPosts"], (old = []) => [
+      queryClient.setQueryData(["allPosts"], (oldPosts  = []) => [
         optimisticPost,
-        ...old,
+        ...oldPosts,
       ]);
 
       return { previousPosts };
@@ -91,7 +91,7 @@ export default function CreatePostCard() {
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries(["allPosts"]);
+      queryClient.invalidateQueries({ queryKey: ["allPosts"] });
     },
   });
 

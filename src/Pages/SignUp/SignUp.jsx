@@ -11,17 +11,22 @@ const validationSchema = zod.object({
   name: zod.string("Name must be text").regex(/[a-zA-Z][a-zA-Z ]{5,18}/, "Please Enter a valid name").nonempty("Name is required"),
     username: zod.string("User Name must be text").regex(/[a-zA-Z][a-zA-Z ]{5,18}/, "Please Enter a valid username").nonempty("User Name is required"),
   email: zod.email("Please enter a valid email"),
-  dateOfBirth : zod.coerce.date().refine(function(value){
-    const today = new Date()
-    const age = today.getFullYear() - value.getFullYear()
-    if (age > 18){
-      return true;
-    }else {
-      return false;
-    }
-  },{
-    error: "User Age Must be Above 18"
-  }).transform(function(value){
+  dateOfBirth : zod.coerce.date().refine((value) => {
+  const today = new Date();
+  const birthDate = new Date(value);
+  let age = today.getFullYear() - birthDate.getFullYear();
+
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+  ) {
+    age--;
+  }
+  return age >= 18;
+}, {
+  error: "User must be above 18",
+}).transform(function(value){
     return value.toLocaleDateString("en-CA")
   }),
   password: zod.string("Password is required").regex(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/, "Please enter a valid Password").nonempty("Password is required"),
@@ -67,10 +72,10 @@ export default function SignUp() {
      success: function(msg){
         setLoading(false);
      loginNavigate("/login");
-     <p className="text-emerald-700">{msg.data.message}</p>},
+    return <> <p className="text-emerald-700">{msg.data.message}</p></>},
      error: function(msg) {
         setLoading(false);
-      <p className="text-red-500">{msg.response.data.errors}</p>},
+      return <><p className="text-red-500">{msg.response.data.errors}</p></>},
    }
  );
   }

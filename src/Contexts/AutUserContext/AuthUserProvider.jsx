@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import axios from "axios"
-import { createContext, useEffect, useState } from "react"
+import { createContext, useState } from "react"
 
 export const AuthUserContext = createContext(null)
 
@@ -24,22 +24,16 @@ export default function AuthUserProvider({children}) {
       return response.data.data.user
 
   }
-
-  // Fetch user when token changes
-useEffect(() => {
-  console.log(userData);
-}, [userData]);
-
 /*use Query  */
 
-useQuery({
+const {isLoading} = useQuery({
   queryKey: ['userProfile'],
   queryFn: getUserData,
   enabled: !!token
 })
 
 
-    const tokenObject = {token, setToken ,setUserData, userData, getUserData}
+    const tokenObject = {token, setToken ,setUserData, userData, getUserData, isLoading}
   return (
     <AuthUserContext value={tokenObject}>
       {children}
